@@ -1,0 +1,5 @@
+config/.env
+postgres_data
+__pycache__/
+*.pyc
+*.pyo

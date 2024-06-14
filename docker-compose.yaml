@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  airdrop-bot:
+    container_name: airdrop-bot
+    image: airdrop-bot
+    build: .
+    env_file: config/.env
+    restart: always
+    depends_on:
+      - postgres
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+
+  postgres:
+    container_name: postgres
+    image: postgres:14
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-airdropBot}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres_data:/data/postgres
+    command: postgres
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+volumes:
+  postgres_data:
