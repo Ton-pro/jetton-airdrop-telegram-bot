@@ -46,14 +46,14 @@ async def check_participation(message: Message, user: User, airdrop: Airdrop, te
         claimed_users = []
 
     if not (user.user_id in claimed_users) and len(claimed_users) < airdrop.max_count_users:
-        tr = await transaction(user, user.balance, airdrop.jetton_wallet)
+        await transaction(user, user.balance, airdrop.jetton_wallet)
         claimed_users.append(user.user_id)
         await Database.update_users_airdrop(airdrop.id, claimed_users)
         await Database.update_balance(user.user_id, 0)
 
         name = airdrop.jetton_name if airdrop.jetton_name else "TON"
         await message.edit_text(
-            text=texts["successful_airdrop"].format(amount=user.balance, name=name, link=tr), disable_web_page_preview=True)
+            text=texts["successful_airdrop"].format(amount=user.balance, name=name))
     elif user.user_id in claimed_users:
         await message.edit_text(text=texts["completed_airdrop"])
     elif len(claimed_users) >= airdrop.max_count_users:

@@ -25,9 +25,6 @@ async def transaction(user: User, amount: float, jetton_address: str = None):
     else:
         await wal.transfer_ton(destination_address=user.wallet,
                                amount=amount)
-    respons = await client.get_transactions(address=user.wallet,limit=1)
-    return f"https://tonviewer.com/{respons[0].in_msg.destination}/jetton/{AIRDROP_JETTON_MASTER}"
-
 
 async def get_comment_message(destination_address: str, amount: int, comment: str) -> dict:
     data = {
