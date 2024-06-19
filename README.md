@@ -1,6 +1,6 @@
 # Jetton Airdrop Telegram Bot
 
-⚡️Important note: we are currently developing a bot that will automatically deploy your own airdrop bots. If at this stage you need help setting up and deploying the bot, the code of which you see in this repository, write to @kevin_kramnik and we will help you for a small amount of money.
+⚡️Important note: we are currently developing a bot that will automatically deploy your own airdrop bots. If at this stage you need help setting up and deploying the bot, the code of which you see in this repository, write to https://t.me/kevin_kramnik and we will help you for a small amount of money.
 
 To run a telegram bot, you will need any server with a Linux operating system and docker and docker-compose installed
 Clone the repository
