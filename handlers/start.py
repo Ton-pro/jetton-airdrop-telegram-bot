@@ -1,130 +1,47 @@
-from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from database import Database
-from utils import load_texts
+from utils import check_channels, main_menu
 from keyboards import InlineKeyboard
 
-from config import bot, LINK, logger
+from config import translations_cache, users_cache, INITIAL_REFERRAL_TOKENS
 
 
-async def start(message: Message, state: FSMContext):
+async def start(message: Message, cached_user):
+    texts = translations_cache.cache[cached_user.lang]
+    await main_menu(cached_user, texts, message)
 
-    user_id = message.chat.id
-    referral_id = message.text.split(' ')
-    if len(referral_id) == 2:
-        if int(referral_id[1]) != message.chat.id:
-            referral_id = int(referral_id[1])
-        else:
-            referral_id = None
-    else:
-        referral_id = None
+async def start_callback(callback: CallbackQuery, cached_user):
+    texts = translations_cache.cache[cached_user.lang]
+    await main_menu(cached_user, texts, callback.message)
 
-    user = await Database.get_user(user_id)
-    if user is None:
-        await state.update_data(referral_id=referral_id)
-        await message.answer(
-        text=f"Это демо бот. Для дальнейшей работы выберите язык.\nThis is a demo bot. For further work, select your language.\nhttps://github.com/Ton-pro/jetton-airdrop-telegram-bot", reply_markup=await InlineKeyboard.select_lang(),
-        disable_web_page_preview=True)
-        return
-
-    texts = await load_texts(user.lang)
-    await state.update_data(lang=user.lang)
-
-    # Проверка подписки
-    all_channels_sb = True
-    channels = await Database.get_channels()
-    for channel in channels:
-        user_info = await bot.get_chat_member(chat_id=f"@{channel.username}", user_id=message.chat.id)
-        if user_info.status == 'left':
-            all_channels_sb = False
-        channel.status = user_info.status
-    if not all_channels_sb:
-        await message.edit_text(text=texts['not_subscribed'],
-                             reply_markup=await InlineKeyboard(texts).subscribe_kb(channels))
-        await state.update_data(referral_id=referral_id)
-        return
-
-    await message.answer(
-        text=texts['menu_description'].format(link=LINK.format(message.chat.id), wallet=user.wallet,
-                                              tokens=user.balance, level_1=user.level_1, level_2=user.level_2),
-        reply_markup=await InlineKeyboard(texts).start_kb(user.wallet is not None, LINK.format(message.chat.id)),
-        disable_web_page_preview=True)
-
-
-async def start_callback(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    if not 'lang' in data:
-        user = await Database.get_user(callback.message.chat.id)
-        if user is None:
-            await callback.message.edit_text(
-            text="Это демо бот https://github.com/Ton-pro/jetton-airdrop-telegram-bot. Для дальнейшей работы выбереи язык", reply_markup=await InlineKeyboard.select_lang(),
-            disable_web_page_preview=True)
-            return
-        lang=user.lang
-    else:
-        lang=data['lang']
-    texts = await load_texts(lang)
-
-    all_channels_sb = True
-    channels = await Database.get_channels()
-    for channel in channels:
-        user_info = await bot.get_chat_member(chat_id=f"@{channel.username}", user_id=callback.message.chat.id)
-        if user_info.status == 'left':
-            all_channels_sb = False
-        channel.status = user_info.status
-    if not all_channels_sb:
-        await callback.answer(text=texts['not_subscribed'], show_alert=True)
-        return
-    if 'referral_id' in data:
-        await Database.insert_user(callback.message.chat.id, data['referral_id'], lang)
-
-    user = await Database.get_user(callback.message.chat.id)
-
-    try:
-        await callback.message.edit_text(
-            text=texts['menu_description'].format(link=LINK.format(callback.message.chat.id),
-                                                  wallet=user.wallet, tokens=user.balance, level_1=user.level_1,
-                                                  level_2=user.level_2),
-            reply_markup=await InlineKeyboard(texts).start_kb(user.wallet is not None, LINK.format(callback.message.chat.id)),
-            disable_web_page_preview=True)
-    except Exception as e:
-        logger.error(e)
-
-
-async def star_lang_callback(callback: CallbackQuery, state: FSMContext):
+async def start_lang_callback(callback: CallbackQuery, cached_user):
+    user_id = cached_user.user_id
     if callback.data == 'lang_ru':
         lang = 'ru'
     if callback.data == 'lang_en':
         lang = 'en'
-    await state.update_data(lang=lang)
-    texts = await load_texts(lang)
 
-    all_channels_sb = True
-    channels = await Database.get_channels()
-    for channel in channels:
-        user_info = await bot.get_chat_member(chat_id=f"@{channel.username}", user_id=callback.message.chat.id)
-        if user_info.status == 'left':
-            all_channels_sb = False
-        channel.status = user_info.status
-    if not all_channels_sb:
-        await callback.message.edit_text(text=texts['not_subscribed'],
-                             reply_markup=await InlineKeyboard(texts).subscribe_kb(channels))
-        return
+    texts = translations_cache.cache[lang]
 
-    data = await state.get_data()
-    if 'referral_id' in data:
-        await Database.insert_user(callback.message.chat.id, data['referral_id'], data['lang'])
+    await Database.update_lang(user_id, lang)
 
-    user = await Database.get_user(callback.message.chat.id)
+    if not cached_user.isSubscribe:
+        channels = await Database.get_channels()
+        status = await check_channels(channels, cached_user.user_id, texts, callback.message)
+        if status and not cached_user.isSubscribe:
+            await Database.update_subscription_status(cached_user.user_id)
+        if status and cached_user.referral_id:
+            await Database.update_referrals(cached_user.referral_id, 1, INITIAL_REFERRAL_TOKENS)
+        user = await Database.get_user(user_id)
+        users_cache.update_user(user)
 
-    try:
-        await callback.message.edit_text(
-            text=texts['menu_description'].format(link=LINK.format(callback.message.chat.id),
-                                                  wallet=user.wallet, tokens=user.balance, level_1=user.level_1,
-                                                  level_2=user.level_2),
-            reply_markup=await InlineKeyboard(texts).start_kb(user.wallet is not None, LINK.format(callback.message.chat.id)),
-            disable_web_page_preview=True)
-    except:
-        pass
+    if status:
+        await main_menu(user, texts, callback.message)
 
+async def check_group_callback(callback: CallbackQuery, cached_user):
+    texts = translations_cache.cache[cached_user.lang]
+    if cached_user.isSubscribe:
+        await main_menu(cached_user, texts, callback.message)
+    else:
+        await callback.answer(text=texts['not_subscribed'], show_alert=True)

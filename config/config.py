@@ -8,11 +8,13 @@ from os import environ as env
 
 import requests
 from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
+from cache.user import UserCache
+from cache.translation import TranslationCache
 from dotenv import load_dotenv
 from aiogram import Dispatcher, Bot
 
 from tonsdk.contract.wallet import Wallets, WalletVersionEnum
+
 
 load_dotenv()
 
@@ -39,9 +41,6 @@ TIMEZONE = pytz.timezone(env['TIMEZONE'])
 url = f"https://t.me/{env['LINK']}?start="
 LINK = url + "{}"
 
-# MAIN_CHANNEL_ID = env['MAIN_CHANNEL_ID']
-# SECOND_CHANNEL_ID = env['SECOND_CHANNEL_ID']
-
 POSTGRES_URI = f"postgresql://{env['DATABASE_USER']}:{env['DATABASE_PASS']}@{env['DATABASE_HOST']}/{env['DATABASE_NAME']}"
 
 bot = Bot(token=BOT_API_TOKEN,
@@ -54,5 +53,8 @@ Path(keystore_dir).mkdir(parents=True, exist_ok=True)
 ton_config = requests.get("https://ton.org/global.config.json").json()
 
 mnemonics, pub_k, priv_k, wallet = Wallets.from_mnemonics(mnemonics=MNEMONICS, version=WalletVersionEnum.v4r2)
+
+translations_cache = TranslationCache()
+users_cache = UserCache()
 
 logger.info(wallet.address.to_string(True, True))

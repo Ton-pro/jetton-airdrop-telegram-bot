@@ -1,4 +1,4 @@
-from config import logger, INITIAL_REFERRAL_TOKENS, SECOND_LEVEL_REFERRAL_TOKENS, CHANNELS_LIST, AIRDROP_START_DATE, AIRDROP_END_DATE, AIRDROP_AMOUNT, AIRDROP_MAX_COUNT_USERS, AIRDROP_JETTON_WALLET, AIRDROP_JETTON_NAME
+from config import logger, users_cache, INITIAL_REFERRAL_TOKENS, SECOND_LEVEL_REFERRAL_TOKENS, CHANNELS_LIST, AIRDROP_START_DATE, AIRDROP_END_DATE, AIRDROP_AMOUNT, AIRDROP_MAX_COUNT_USERS, AIRDROP_JETTON_WALLET, AIRDROP_JETTON_NAME
 from .db_gino import db, on_startup
 from .schemas.user import User
 from .schemas.airdrop import Airdrop
@@ -31,32 +31,46 @@ class Database:
     @classmethod
     async def update_referrals(cls, user_id: int, level: int, tokens: int):
         user = await cls.get_user(user_id)
+        logger.error(user_id)
         if level == 1:
             await User.update.values(level_1=user.level_1 + 1, balance=user.balance + tokens).where(
                 User.user_id == user_id).gino.status()
+
         elif level == 2:
             await User.update.values(level_2=user.level_2 + 1, balance=user.balance + tokens).where(
                 User.user_id == user_id).gino.status()
+
+        user = await cls.get_user(user_id)
+        users_cache.update_user(user)
 
         if user.referral_id and level == 1:
             await cls.update_referrals(user.referral_id, 2, SECOND_LEVEL_REFERRAL_TOKENS)
 
     @classmethod
-    async def insert_user(cls, user_id: int, referral_id: int, lang: str,):
+    async def insert_user(cls, user_id: int, referral_id: int):
         data = await cls.get_user(user_id)
         if data is None:
             if referral_id:
-                await User(user_id=user_id, referral_id=referral_id, lang=lang).create()
+                user = await User(user_id=user_id, referral_id=referral_id).create()
             else:
-                await User(user_id=user_id, lang=lang).create()
+                user = await User(user_id=user_id).create()
+            return user
+        return data
 
-            if referral_id:
-                await cls.update_referrals(referral_id, 1, INITIAL_REFERRAL_TOKENS)
+    @classmethod
+    async def update_lang(cls, user_id: int, lang: str):
+        await User.update.values(lang=lang).where(User.user_id == user_id).gino.status()
+
+    @classmethod
+    async def update_subscription_status(cls, user_id: int):
+        await User.update.values(isSubscribe=True).where(User.user_id == user_id).gino.status()
 
     @classmethod
     async def update_wallet(cls, user_id: int, wallet: str | None, wallet_verif: int, wallet_provider: str | None):
         await User.update.values(wallet=wallet, wallet_verif=wallet_verif, wallet_provider=wallet_provider).where(
             User.user_id == user_id).gino.status()
+        user = await cls.get_user(user_id)
+        users_cache.update_user(user)
 
     @classmethod
     async def get_airdrops(cls):

@@ -8,10 +8,9 @@ from pytonconnect import TonConnect
 from pytoniq_core import Address
 from aiogram.fsm.context import FSMContext
 
-from config import MANIFEST_URL, wallet, LINK
+from config import MANIFEST_URL, LINK, translations_cache
 from database import Database
 from keyboards import InlineKeyboard
-from utils import load_texts
 
 storage = {}
 
@@ -37,13 +36,8 @@ async def get_connector(chat_id: int):
     return TonConnect(MANIFEST_URL, storage=TcStorage(chat_id))
 
 
-async def connect_wallet(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    if not 'lang' in data:
-        user = await Database.get_user(callback.message.chat.id)
-        texts = await load_texts(user.lang)
-    else:
-        texts = await load_texts(data['lang'])
+async def connect_wallet(callback: CallbackQuery, state: FSMContext, cached_user):
+    texts = translations_cache.cache[cached_user.lang]
 
     try:
         await callback.message.edit_text(text=texts['connect'], reply_markup=await InlineKeyboard(texts).list_wallets())
@@ -52,13 +46,8 @@ async def connect_wallet(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer(text=texts['connect'], reply_markup=await InlineKeyboard(texts).list_wallets())
 
 
-async def connected_wallet(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    if not 'lang' in data:
-        user = await Database.get_user(callback.message.chat.id)
-        texts = await load_texts(user.lang)
-    else:
-        texts = await load_texts(data['lang'])
+async def connected_wallet(callback: CallbackQuery, state: FSMContext, cached_user):
+    texts = translations_cache.cache[cached_user.lang]
 
     wallet_name = callback.data.split(':')[1]
     connector = await get_connector(callback.message.chat.id)
@@ -108,13 +97,8 @@ async def connected_wallet(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(text=texts['timeout_error'], reply_markup=await InlineKeyboard(texts).list_wallets())
 
 
-async def disconnect_wallet(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    if not 'lang' in data:
-        user = await Database.get_user(callback.message.chat.id)
-        texts = await load_texts(user.lang)
-    else:
-        texts = await load_texts(data['lang'])
+async def disconnect_wallet(callback: CallbackQuery, state: FSMContext, cached_user):
+    texts = translations_cache.cache[cached_user.lang]
 
     try:
         connector = await get_connector(callback.message.chat.id)

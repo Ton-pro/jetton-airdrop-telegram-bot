@@ -1,18 +1,14 @@
-import json
 from base64 import urlsafe_b64encode
 
+from keyboards.inline import InlineKeyboard
 from pytoniq_core import begin_cell
 from TonTools import Wallet, TonCenterClient
-from config.config import mnemonics, TONCENTER_API
+from aiogram.types import Message
+from aiogram.exceptions import TelegramAPIError
+
 from database.schemas.user import User
-from config import logger, bot, AIRDROP_JETTON_MASTER
-
-
-async def load_texts(language: str = 'ru'):
-    with open('texts.json', 'r', encoding='utf-8') as f:
-        texts = json.load(f)
-    return texts.get(language, texts['en'])
-
+from config import logger, bot, LINK
+from config.config import mnemonics, TONCENTER_API
 
 async def transaction(user: User, amount: float, jetton_address: str = None):
     client = TonCenterClient(base_url='https://toncenter.com/api/v2/',
@@ -48,3 +44,57 @@ async def get_chat_info(channel_username):
         return chat
     except Exception as e:
         logger.error(f"An error occurred: {e}")
+
+def get_referral_id(message: Message, self_id: int) -> int:
+    referral_id = message.text.split(' ')
+    if len(referral_id) == 2:
+        if int(referral_id[1]) != self_id:
+            referral_id = int(referral_id[1])
+        else:
+            referral_id = None
+    else:
+        referral_id = None
+    return referral_id
+
+async def  check_channels(channels, user_id: int, texts: dict, message: Message) -> bool:
+    all_channels_sb = True
+    for channel in channels:
+        user_info = await bot.get_chat_member(chat_id=f"@{channel.username}", user_id=user_id)
+        if user_info.status == 'left':
+            all_channels_sb = False
+        channel.status = user_info.status
+    if not all_channels_sb:
+        try:
+            await message.edit_text(text=texts['not_subscribed'],
+                                reply_markup=await InlineKeyboard(texts).subscribe_kb(channels))
+        except TelegramAPIError as e:
+            if "message can't be edited" in str(e):
+                await message.reply(text=texts['not_subscribed'],
+                                reply_markup=await InlineKeyboard(texts).subscribe_kb(channels))
+            else:
+                logger.error(e)
+        except Exception as e:
+            logger.error(e)
+        return False
+    return True
+
+async def main_menu(user, texts: dict, message: Message):
+    try:
+        await message.edit_text(
+            text=texts['menu_description'].format(link=LINK.format(user.user_id),
+                                                wallet=user.wallet, tokens=user.balance, level_1=user.level_1,
+                                                level_2=user.level_2),
+            reply_markup=await InlineKeyboard(texts).start_kb(user.wallet is not None, LINK.format(user.user_id)),
+            disable_web_page_preview=True)
+    except TelegramAPIError as e:
+        if "message can't be edited" in str(e):
+            await message.reply(
+                text=texts['menu_description'].format(link=LINK.format(user.user_id),
+                                                    wallet=user.wallet, tokens=user.balance, level_1=user.level_1,
+                                                    level_2=user.level_2),
+                reply_markup=await InlineKeyboard(texts).start_kb(user.wallet is not None, LINK.format(user.user_id)),
+                disable_web_page_preview=True)
+        else:
+            logger.error(e)
+    except Exception as e:
+        logger.error(e)

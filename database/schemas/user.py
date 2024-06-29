@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, Integer, String, sql, Float
+from sqlalchemy import Column, BigInteger, Integer, String, sql, Float, Boolean
 from database.db_gino import TimedBaseModel
 from config import INITIAL_BALANCE
 
@@ -13,6 +13,7 @@ class User(TimedBaseModel):
     wallet = Column(String, default=None)
     wallet_provider = Column(String, default=None)
     wallet_verif = Column(Integer, default=0)
-    lang = Column(String)
+    lang = Column(String, default='')
+    isSubscribe = Column(Boolean, default=False)
 
     query: sql.select

@@ -1,6 +1,6 @@
 __all__ = ['INITIAL_BALANCE', 'INITIAL_REFERRAL_TOKENS', 'SECOND_LEVEL_REFERRAL_TOKENS','CHANNELS_LIST', 'BOT_NAME',
            'AIRDROP_START_DATE', 'AIRDROP_END_DATE', 'AIRDROP_AMOUNT', 'AIRDROP_MAX_COUNT_USERS', 'AIRDROP_JETTON_WALLET', 'AIRDROP_JETTON_MASTER', 'AIRDROP_JETTON_NAME',
-           'LINK', "ton_config", 'MANIFEST_URL', 'bot', 'dp', 'logger', 'POSTGRES_URI', 'TIMEZONE', 'keystore_dir', 'wallet']
+           'LINK', "ton_config", 'MANIFEST_URL', 'bot', 'dp', 'logger', 'POSTGRES_URI', 'TIMEZONE', 'keystore_dir', 'wallet', 'translations_cache', 'users_cache']
 
 from .config import (
     INITIAL_BALANCE,
@@ -25,4 +25,6 @@ from .config import (
     ton_config,
     wallet,
     keystore_dir,
+    translations_cache,
+    users_cache,
 )

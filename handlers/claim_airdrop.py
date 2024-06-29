@@ -8,12 +8,12 @@ from tonsdk.utils import to_nano
 
 from database import Database
 from datetime import datetime
-from config import TIMEZONE, logger, wallet, LINK, BOT_NAME
+from config import TIMEZONE, logger, wallet, LINK, BOT_NAME, translations_cache
 from database.schemas.airdrop import Airdrop
 from database.schemas.user import User
 from handlers.wallet import get_connector
 from keyboards import InlineKeyboard
-from utils import load_texts, transaction, get_comment_message
+from utils import transaction, get_comment_message
 
 
 async def payment(callback: CallbackQuery, texts: dict, user: User, airdrop: Airdrop, state: FSMContext):
@@ -97,14 +97,8 @@ async def pay_fee(callback: CallbackQuery, texts: dict, user: User, airdrop: Air
 
 
 async def claim_airdrop(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    if not 'lang' in data:
-        user = await Database.get_user(callback.message.chat.id)
-        texts = await load_texts(user.lang)
-    else:
-        texts = await load_texts(data['lang'])
-
     user = await Database.get_user(callback.message.chat.id)
+    texts = translations_cache.cache[user.lang]
 
     if user.balance == 0:
         await callback.answer(text=texts['zero_balance'], show_alert=True)
