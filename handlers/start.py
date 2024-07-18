@@ -33,11 +33,9 @@ async def start_lang_callback(callback: CallbackQuery, cached_user):
             await Database.update_subscription_status(cached_user.user_id)
         if status and cached_user.referral_id:
             await Database.update_referrals(cached_user.referral_id, 1, INITIAL_REFERRAL_TOKENS)
-        user = await Database.get_user(user_id)
-        users_cache.update_user(user)
-
-    if status:
-        await main_menu(user, texts, callback.message)
+    user = await Database.get_user(user_id)
+    users_cache.update_user(user)
+    await main_menu(user, texts, callback.message)
 
 async def check_group_callback(callback: CallbackQuery, cached_user):
     texts = translations_cache.cache[cached_user.lang]

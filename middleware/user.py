@@ -1,5 +1,6 @@
+import re
 from typing import Callable, Dict, Any, Awaitable
-from aiogram.types import TelegramObject, Message
+from aiogram.types import TelegramObject, Message, CallbackQuery
 from aiogram import BaseMiddleware
 from database import Database
 from keyboards.inline import InlineKeyboard
@@ -29,6 +30,8 @@ class UserCacheMiddleware(BaseMiddleware):
                 user = await Database.insert_user(user_id, referral_id)
                 self.cache[user_id] = user
                 data['cached_user'] = user
+        if isinstance(event, CallbackQuery) and re.search('^lang_[a-z]{2}$', event.data):
+            return await handler(event, data)
         if self.cache[user_id].lang:
             if not self.cache[user_id].isSubscribe:
                 texts = translations_cache.cache[self.cache[user_id].lang]
