@@ -1,6 +1,7 @@
 {
   "ru": {
     "subscribed_button": "Я подписался",
+    "lang_selector": "Это демо бот. Для дальнейшей работы выберите язык\nhttps://github.com/Ton-pro/jetton-airdrop-telegram-bot",
     "menu_description": "Это демо бот https://github.com/Ton-pro/jetton-airdrop-telegram-bot. Чтобы увеличить баланс получатель аирдропа может воспользоваться двух уровневой реферальной программой, с настраиваемой системой начисления наград. \n\nПример вашей ссылки - {link}\n\n👛 Ваш TON кошелек: <code>{wallet}</code>\n\nВаш баланс токенов: {tokens}\nРефералы 1-го уровня: {level_1}\nРефералы 2-го уровня: {level_2} ",
     "invite_friends": "👥 Позвать друзей",
     "check_payment": "✅ Проверить транзакцию",
@@ -42,6 +43,7 @@
   },
   "en": {
     "subscribed_button": "I subscribed",
+    "lang_selector": "This is a demo bot. For further work, select your language\nhttps://github.com/Ton-pro/jetton-airdrop-telegram-bot",
     "menu_description": "This is a demo bot https://github.com/Ton-pro/jetton-airdrop-telegram-bot. 👍\n\nTo increase balance user can use two-level referral program, with a customizable system of calculating rewards.\n\nExample of your link - {link}\n\n👛 Your TON wallet: {wallet}\n\nYour token balance: {tokens}\nTier 1 referrals: {level_1}\nReferrals 2nd level: {level_2}",
     "invite_friends": "👥 Invite friends",
     "check_payment": "✅ Verify the transaction",

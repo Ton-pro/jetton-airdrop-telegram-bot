@@ -26,7 +26,9 @@ class UserCacheMiddleware(BaseMiddleware):
                 self.cache[user_id] = user
                 data['cached_user'] = user
             else:
-                referral_id = get_referral_id(event, int(user_id))
+                referral_id = None
+                if isinstance(event, Message):
+                    referral_id = get_referral_id(event, int(user_id))
                 user = await Database.insert_user(user_id, referral_id)
                 self.cache[user_id] = user
                 data['cached_user'] = user
@@ -37,17 +39,30 @@ class UserCacheMiddleware(BaseMiddleware):
                 texts = translations_cache.cache[self.cache[user_id].lang]
                 channels = await Database.get_channels()
                 status = await check_channels(channels, user_id, texts, event)
-                if status and not self.cache[user_id].isSubscribe:
-                    await Database.update_subscription_status(user_id)
-                    user = await Database.get_user(user_id)
-                    users_cache.update_user(user)
-                    data['cached_user'] = user
-                if status and self.cache[user_id].referral_id:
-                    await Database.update_referrals(self.cache[user_id].referral_id, 1, INITIAL_REFERRAL_TOKENS)
+                if status:
+                    if not self.cache[user_id].isSubscribe:
+                        await Database.update_subscription_status(user_id)
+                        user = await Database.get_user(user_id)
+                        users_cache.update_user(user)
+                        data['cached_user'] = user
+                    if self.cache[user_id].referral_id:
+                        await Database.update_referrals(self.cache[user_id].referral_id, 1, INITIAL_REFERRAL_TOKENS)
+                else:
+                    if isinstance(event, CallbackQuery):
+                        await event.answer(text=texts['not_subscribed'], show_alert=True)
+                    return
         else:
-            await event.answer(
-            text='Это демо бот. Для дальнейшей работы выберите язык.\nThis is a demo bot. For further work, select your language.\nhttps://github.com/Ton-pro/jetton-airdrop-telegram-bot',
-                reply_markup=await InlineKeyboard.select_lang(),
-            disable_web_page_preview=True)
+            texts = translations_cache.cache[event.from_user.language_code if event.from_user.language_code == "ru" else "en"]
+            if isinstance(event, CallbackQuery):
+                await event.message.edit_text(
+                    text=texts['lang_selector'],
+                    reply_markup=await InlineKeyboard.select_lang(),
+                    disable_web_page_preview=True)
+
+            else:
+                await event.answer(
+                    text=texts['lang_selector'],
+                    reply_markup=await InlineKeyboard.select_lang(),
+                    disable_web_page_preview=True)
             return
         return await handler(event, data)

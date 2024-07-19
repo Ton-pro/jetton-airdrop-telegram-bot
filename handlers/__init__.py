@@ -15,7 +15,6 @@ async def register_handlers(router: Router):
     router.callback_query.middleware(UserCacheMiddleware())
     router.message.register(start, Command('start'))
     router.callback_query.register(start_callback, F.data == "menu")
-    router.callback_query.register(check_group_callback, F.data == "check_group")
     router.message.register(start, Command('menu'))
     router.callback_query.register(connect_wallet, F.data == 'wallets')
     router.callback_query.register(connected_wallet, lambda query: query.data.startswith('connect:'))

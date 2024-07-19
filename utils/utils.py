@@ -69,7 +69,7 @@ async def  check_channels(channels, user_id: int, texts: dict, message: Message)
                                 reply_markup=await InlineKeyboard(texts).subscribe_kb(channels))
         except TelegramAPIError as e:
             if "message can't be edited" in str(e):
-                await message.reply(text=texts['not_subscribed'],
+                await message.answer(text=texts['not_subscribed'],
                                 reply_markup=await InlineKeyboard(texts).subscribe_kb(channels))
             else:
                 logger.error(e)

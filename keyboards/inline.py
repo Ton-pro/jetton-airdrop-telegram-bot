@@ -60,7 +60,7 @@ class InlineKeyboard:
         for channel in channels_list:
             text = f"{channel.title}{ ' ✅' if channel.status != 'left' else ''}"
             keyboard.append([InlineKeyboardButton(text=text, url=f"https://t.me/{channel.username}")])
-        keyboard.append([InlineKeyboardButton(text=cls.__texts['subscribed_button'], callback_data='check_group')])
+        keyboard.append([InlineKeyboardButton(text=cls.__texts['subscribed_button'], callback_data='menu')])
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     @classmethod
